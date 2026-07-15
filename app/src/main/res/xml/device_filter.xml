@@ -1,0 +1,4 @@
+<resources>
+    <!-- FTDI (vLinker FS USB) : VID 0x0403. Filtre sur le vendor uniquement. -->
+    <usb-device vendor-id="1027"/>
+</resources>

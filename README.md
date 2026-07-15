@@ -666,3 +666,30 @@ Reponse a la question "est-ce que tout marchera sur MA voiture ?" : l'app le mes
 - Note d'environnement : BuildConfig genere du Java et la chaine javac de ce conteneur est
   cassee (JdkImageTransform) — contourne proprement par une constante Kotlin, l'app reste
   100 % Kotlin sans source generee.
+
+## Journal v32 — corrections terrain (d'après logs voiture réelle)
+
+Diagnostic à partir de la Console sur la vraie Sandero. Deux problèmes distincts, corrigés
+avec repli automatique partout :
+
+### 1. Session UDS refusée (7F 10 12 sur 10 03)
+- Renault refuse la session standard **10 03** (sous-fonction non supportée). REN_ON tente
+  désormais **10 C0** (session Renault) d'abord, puis 10 03, puis 10 01, et retient la première
+  acceptée (`openRenaultSession`). Débloque les paramètres injection (couple, pédale, T° huile…).
+  Le simulateur accepte aussi 10C0 ; bouton **10C0** ajouté dans la Console.
+
+### 2. Régime / vitesse / infos de base manquants (OBD)
+- **PID essentiels toujours tentés** : 0C (régime), 0D (vitesse), 11 (papillon) + 05/0F/04 sont
+  désormais interrogés MÊME si le bitmap 0100 ne les déclare pas — des calculateurs Renault y
+  répondent sans les annoncer. C'était la cause probable du régime absent.
+- **Repli multi-PID dynamique** : si le régime disparaît de la réponse groupée 3 cycles de suite,
+  l'app rebascule seule en lecture individuelle (avant : verrouillage définitif au 1er test).
+- **Filet de sécurité universel** : si une lecture rapide revient vide, retentative immédiate en
+  individuel — plus jamais d'écran vide quand l'individuel peut répondre.
+
+### 3. Confort de diagnostic
+- **ClimBox** (clim manuelle) : affiché « non présent (option absente ?) » au lieu d'« absent »
+  en rouge alarmant. C'est normal sur ce véhicule.
+- **Raisons de refus lisibles** : les négatifs UDS (7F …) sont traduits dans le journal —
+  « identifiant hors plage », « conditions non réunies », « sous-fonction non supportée », etc.
+  Les actionneurs BCM condamnation/détresse (IDs du vieux fichier T4) affichent donc la vraie cause.
